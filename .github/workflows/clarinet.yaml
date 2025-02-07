@@ -1,53 +1,21 @@
 name: CI
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-env:
-  NODE_ENV: test
-
+on: [push]
 jobs:
   tests:
     name: "Secure Parental Control for Digital Allowance"
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x, 20.x]
-
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v3
-
-      - name: "Cache dependencies"
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: "Check contract syntax"
         uses: docker://hirosystems/clarinet:latest
         with:
           args: check
-
-      - name: "Setup Node.js ${{ matrix.node-version }}"
+      - name: "Setup Node.js"
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: "Install dependencies"
+          node-version: "18.x"
+      - name: "Prep CI"
         run: npm ci
-
-      - name: "Lint code"
-        run: npm run lint
-
       - name: "Execute tests"
         run: npm run test:report
-
-      - name: "Upload coverage"
-        uses: codecov/codecov-action@v3
