@@ -563,3 +563,115 @@
 )
 
 
+(define-map category-alerts
+    { category-id: uint, child: principal }
+    {
+        warning-threshold: uint,
+        last-alert: uint,
+        is-frozen: bool
+    }
+)
+
+(define-public (set-category-alert (category-id uint) (child principal) (threshold uint))
+    (begin
+        (asserts! (is-parent tx-sender) ERR-NOT-AUTHORIZED)
+        (ok (map-set category-alerts
+            { category-id: category-id, child: child }
+            {
+                warning-threshold: threshold,
+                last-alert: u0,
+                is-frozen: false
+            }
+        ))
+    )
+)
+
+(define-public (check-category-spending (category-id uint))
+    (let (
+        (category (unwrap! (map-get? spending-categories { category-id: category-id }) (err u404)))
+        (alert-settings (unwrap! (map-get? category-alerts { category-id: category-id, child: tx-sender }) (err u404)))
+    )
+        (if (>= (get current-spent category) (get warning-threshold alert-settings))
+            (begin
+                (map-set category-alerts
+                    { category-id: category-id, child: tx-sender }
+                    {
+                        warning-threshold: (get warning-threshold alert-settings),
+                        last-alert: stacks-block-height,
+                        is-frozen: true
+                    }
+                )
+                (ok true))
+            (ok false))
+    )
+)
+
+
+
+(define-map group-savings
+    { goal-id: uint }
+    {
+        name: (string-ascii 50),
+        target-amount: uint,
+        current-amount: uint,
+        participants: (list 10 principal),
+        completed: bool
+    }
+)
+
+(define-map participant-contributions
+    { goal-id: uint, participant: principal }
+    { amount: uint }
+)
+
+(define-public (create-group-goal (name (string-ascii 50)) (target-amount uint) (participants (list 10 principal)))
+    (let ((goal-id (+ (var-get last-goal-id) u1)))
+        (begin
+            (var-set last-goal-id goal-id)
+            (ok (map-set group-savings
+                { goal-id: goal-id }
+                {
+                    name: name,
+                    target-amount: target-amount,
+                    current-amount: u0,
+                    participants: participants,
+                    completed: false
+                }
+            ))
+        )
+    )
+)
+
+(define-public (contribute-to-group-goal (goal-id uint) (amount uint))
+    (let (
+        (goal (unwrap! (map-get? group-savings { goal-id: goal-id }) (err u404)))
+        (allowance (get-allowance tx-sender))
+        (current-contribution (default-to { amount: u0 } 
+            (map-get? participant-contributions { goal-id: goal-id, participant: tx-sender })))
+    )
+        (asserts! (>= (get amount allowance) amount) ERR-INSUFFICIENT-BALANCE)
+        (let ((new-total (+ (get current-amount goal) amount)))
+            (begin
+                (map-set allowances 
+                    { child: tx-sender }
+                    { amount: (- (get amount allowance) amount), parent: (get parent allowance) })
+                
+                (map-set participant-contributions
+                    { goal-id: goal-id, participant: tx-sender }
+                    { amount: (+ (get amount current-contribution) amount) })
+                
+                (map-set group-savings
+                    { goal-id: goal-id }
+                    {
+                        name: (get name goal),
+                        target-amount: (get target-amount goal),
+                        current-amount: new-total,
+                        participants: (get participants goal),
+                        completed: (>= new-total (get target-amount goal))
+                    }
+                )
+                (ok true)
+            )
+        )
+    )
+)
