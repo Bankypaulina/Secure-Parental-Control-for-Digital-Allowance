@@ -675,3 +675,116 @@
         )
     )
 )
+
+
+(define-map savings-match-rules
+    { child: principal }
+    {
+        match-ratio: uint,
+        max-match: uint,
+        total-matched: uint,
+        active: bool
+    }
+)
+
+(define-public (set-savings-match-rule (child principal) (ratio uint) (max-match uint))
+    (begin
+        (asserts! (is-parent tx-sender) ERR-NOT-AUTHORIZED)
+        (ok (map-set savings-match-rules
+            { child: child }
+            {
+                match-ratio: ratio,
+                max-match: max-match,
+                total-matched: u0,
+                active: true
+            }
+        ))
+    )
+)
+
+(define-public (process-savings-match (goal-id uint) (contribution uint))
+    (let (
+        (match-rule (unwrap! (map-get? savings-match-rules { child: tx-sender }) (err u404)))
+        (match-amount (/ (* contribution (get match-ratio match-rule)) u100))
+    )
+        (asserts! (get active match-rule) (err u405))
+        (asserts! (<= (+ (get total-matched match-rule) match-amount) (get max-match match-rule)) (err u406))
+        
+        (begin
+            (map-set savings-match-rules
+                { child: tx-sender }
+                {
+                    match-ratio: (get match-ratio match-rule),
+                    max-match: (get max-match match-rule),
+                    total-matched: (+ (get total-matched match-rule) match-amount),
+                    active: (get active match-rule)
+                }
+            )
+            (contribute-to-goal goal-id match-amount)
+        )
+    )
+)
+
+
+
+(define-map spending-analytics
+    { child: principal }
+    {
+        total-transactions: uint,
+        average-spend: uint,
+        largest-spend: uint,
+        most-frequent-category: uint,
+        last-analysis: uint
+    }
+)
+
+(define-map category-spending
+    { child: principal, category: uint }
+    {
+        count: uint,
+        total: uint
+    }
+)
+
+(define-public (update-spending-analytics (amount uint) (category uint))
+    (let (
+        (current-analytics (default-to 
+            {
+                total-transactions: u0,
+                average-spend: u0,
+                largest-spend: u0,
+                most-frequent-category: u0,
+                last-analysis: u0
+            }
+            (map-get? spending-analytics { child: tx-sender })))
+        (category-stats (default-to
+            { count: u0, total: u0 }
+            (map-get? category-spending { child: tx-sender, category: category })))
+    )
+        (begin
+            (map-set category-spending
+                { child: tx-sender, category: category }
+                {
+                    count: (+ (get count category-stats) u1),
+                    total: (+ (get total category-stats) amount)
+                }
+            )
+            
+            (ok (map-set spending-analytics
+                { child: tx-sender }
+                {
+                    total-transactions: (+ (get total-transactions current-analytics) u1),
+                    average-spend: (/ (+ (* (get average-spend current-analytics) 
+                                          (get total-transactions current-analytics)) 
+                                       amount)
+                                    (+ (get total-transactions current-analytics) u1)),
+                    largest-spend: (if (> amount (get largest-spend current-analytics))
+                                     amount
+                                     (get largest-spend current-analytics)),
+                    most-frequent-category: category,
+                    last-analysis: stacks-block-height
+                }
+            ))
+        )
+    )
+)
