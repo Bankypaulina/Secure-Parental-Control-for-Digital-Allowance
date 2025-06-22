@@ -788,3 +788,8 @@
         )
     )
 )
+
+
+(define-read-only (get-spending-analytics (child principal))
+    (map-get? spending-analytics { child: child }))
+    
