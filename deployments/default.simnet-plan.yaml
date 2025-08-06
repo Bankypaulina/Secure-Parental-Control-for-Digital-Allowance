@@ -50,8 +50,28 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
+            contract-name: allowance-vault
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: "contracts\\allowance-vault.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: audit-compliance
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: "contracts\\audit-compliance.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: emergency-recovery
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: "contracts\\emergency-recovery.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
             contract-name: spc
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/spc.clar
+            path: "contracts\\spc.clar"
+            clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: time-based-limits
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: "contracts\\time-based-limits.clar"
             clarity-version: 3
       epoch: "3.1"
