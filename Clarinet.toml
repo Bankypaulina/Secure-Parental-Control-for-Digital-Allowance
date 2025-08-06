@@ -24,6 +24,11 @@ epoch = 3.1
 path = 'contracts/time-based-limits.clar'
 clarity_version = 3
 epoch = 3.1
+
+[contracts.audit-compliance]
+path = 'contracts/audit-compliance.clar'
+clarity_version = 3
+epoch = 3.1
 [repl.analysis]
 passes = ['check_checker']
 
