@@ -5,8 +5,33 @@ authors = []
 telemetry = false
 cache_dir = '.\.cache'
 requirements = []
+[contracts.allowance-vault]
+path = 'contracts/allowance-vault.clar'
+clarity_version = 3
+epoch = 3.1
+
 [contracts.spc]
 path = 'contracts/spc.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.emergency-recovery]
+path = 'contracts/emergency-recovery.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.time-based-limits]
+path = 'contracts/time-based-limits.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.audit-compliance]
+path = 'contracts/audit-compliance.clar'
+clarity_version = 3
+epoch = 3.1
+
+[contracts.subscription-manager]
+path = 'contracts/subscription-manager.clar'
 clarity_version = 3
 epoch = 3.1
 [repl.analysis]
